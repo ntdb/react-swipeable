@@ -20,8 +20,27 @@ var Swipeable = React.createClass({
       x: null,
       y: null,
       swiping: false,
-      start: 0
+      start: 0,
+      wheelTimeout: null
     }
+  },
+
+  resetWheelTimeout: function (ev) {
+    if (this.state.wheelTimeout !== null) {
+      clearTimeout(this.state.wheelTimeout)
+    }
+    this.setState({
+      x: this.state.x + ev.deltaX,
+      y: this.state.y + ev.deltaY,
+      wheelTimeout: setTimeout( () => {
+        var e = {
+          deltaX: this.state.x,
+          deltaY: this.state.y
+        };
+        this.touchEnd(e)
+        this.setState(this.getInitialState())
+      }, 50)
+    });
   },
 
   getDefaultProps: function () {
@@ -32,11 +51,17 @@ var Swipeable = React.createClass({
   },
 
   calculatePos: function (e) {
-    var x = e.changedTouches[0].clientX
-    var y = e.changedTouches[0].clientY
+    var xd = yd = null;
+    if (e.changedTouches !== undefined) {
+      var x = e.changedTouches[0].clientX
+      var y = e.changedTouches[0].clientY
 
-    var xd = this.state.x - x
-    var yd = this.state.y - y
+      xd = this.state.x - x
+      yd = this.state.y - y
+    } else {
+      xd = this.state.x + e.deltaX
+      yd = this.state.y + e.deltaY
+    }
 
     var axd = Math.abs(xd)
     var ayd = Math.abs(yd)
@@ -50,7 +75,11 @@ var Swipeable = React.createClass({
   },
 
   touchStart: function (e) {
-    if (e.touches.length > 1) {
+    if (this.state.swiping) {
+      return;
+    }
+    var multiTouch = e.touches !== undefined && e.touches.length > 1
+    if (multiTouch) {
       return
     }
     this.setState({
@@ -62,7 +91,8 @@ var Swipeable = React.createClass({
   },
 
   touchMove: function (e) {
-    if (!this.state.x || !this.state.y || e.touches.length > 1) {
+    var multiTouch = e.touches !== undefined && e.touches.length > 1
+    if (this.state.x == null || this.state.y == null || multiTouch) {
       return
     }
 
@@ -120,7 +150,7 @@ var Swipeable = React.createClass({
         pos.deltaY,
         isFlick
       )
-      
+
       if (pos.absX > pos.absY) {
         if (pos.deltaX > 0) {
           this.props.onSwipedLeft && this.props.onSwipedLeft(ev, pos.deltaX, isFlick)
@@ -135,8 +165,32 @@ var Swipeable = React.createClass({
         }
       }
     }
-    
+
     this.setState(this.getInitialState())
+  },
+
+  wheel: function (ev) {
+    // For initializing the movement
+    if (!this.state.swiping) {
+      this.setState({
+        start: Date.now(),
+        x: 0,
+        y: 0,
+        swiping: true
+      })
+    } else {
+      // Accounts for momentum scrolling
+      // var xIncreasing = Math.abs(ev.deltaX) > Math.abs(this.state.x);
+      // var yIncreasing = Math.abs(ev.deltaY) > Math.abs(this.state.Y);
+      // if(xIncreasing || yIncreasing) {
+      this.touchMove(ev)
+      this.resetWheelTimeout(ev)
+      // }
+    }
+    // Accounts for the "back" action in Safari and Chrome (with some tradeoffs)
+    if (Math.abs(ev.deltaX) > Math.abs(ev.deltaY)  && ev.deltaX < 0) {
+      ev.preventDefault();
+    }
   },
 
   render: function () {
@@ -144,9 +198,10 @@ var Swipeable = React.createClass({
       <div {...this.props}
         onTouchStart={this.touchStart}
         onTouchMove={this.touchMove}
-        onTouchEnd={this.touchEnd} >
+        onTouchEnd={this.touchEnd}
+        onWheel={this.wheel} >
           {this.props.children}
-      </div>  
+      </div>
     )
   }
 })
