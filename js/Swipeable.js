@@ -187,8 +187,8 @@ var Swipeable = React.createClass({displayName: "Swipeable",
       this.resetWheelTimeout(ev)
       // }
     }
-    // Accounts for the "back" action in Safari and Chrome (with some tradeoffs)
-    if (Math.abs(ev.deltaX) > Math.abs(ev.deltaY)  && ev.deltaX < 0) {
+    // Prevent forward/back actions in Safari and Chrome (with tradeoffs)
+    if (Math.abs(ev.deltaX) > Math.abs(ev.deltaY)) {
       ev.preventDefault();
     }
   },
