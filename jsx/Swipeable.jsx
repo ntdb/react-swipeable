@@ -1,31 +1,31 @@
 var React = require('react')
 
-var Swipeable = React.createClass({
-  propTypes: {
-    onSwiped: React.PropTypes.func,
-    onSwipingUp: React.PropTypes.func,
-    onSwipingRight: React.PropTypes.func,
-    onSwipingDown: React.PropTypes.func,
-    onSwipingLeft: React.PropTypes.func,
-    onSwipedUp: React.PropTypes.func,
-    onSwipedRight: React.PropTypes.func,
-    onSwipedDown: React.PropTypes.func,
-    onSwipedLeft: React.PropTypes.func,
-    flickThreshold: React.PropTypes.number,
-    delta: React.PropTypes.number
-  },
+var initialState = {
+  x: null,
+  y: null,
+  swiping: false,
+  start: 0,
+  wheelTimeout: null
+};
 
-  getInitialState: function () {
-    return {
-      x: null,
-      y: null,
-      swiping: false,
-      start: 0,
-      wheelTimeout: null
-    }
-  },
+var defaultProps = {
+  flickThreshold: 0.6,
+  delta: 10
+};
 
-  resetWheelTimeout: function (ev) {
+class Swipeable extends React.Component {
+  constructor() {
+    this.state = initialState;
+
+    this.resetWheelTimeout = this.resetWheelTimeout.bind(this);
+    this.calculatePos = this.calculatePos.bind(this);
+    this.touchStart = this.touchStart.bind(this);
+    this.touchMove = this.touchMove.bind(this);
+    this.touchEnd = this.touchEnd.bind(this);
+    this.wheel = this.wheel.bind(this);
+  }
+
+  resetWheelTimeout(ev) {
     if (this.state.wheelTimeout !== null) {
       clearTimeout(this.state.wheelTimeout)
     }
@@ -38,20 +38,14 @@ var Swipeable = React.createClass({
           deltaY: this.state.y
         };
         this.touchEnd(e)
-        this.setState(this.getInitialState())
+        this.setState(initialState)
       }, 50)
     });
-  },
+  }
 
-  getDefaultProps: function () {
-    return {
-      flickThreshold: 0.6,
-      delta: 10
-    }
-  },
-
-  calculatePos: function (e) {
-    var xd = yd = null;
+  calculatePos(e) {
+    var xd = null;
+    var yd = null;
     if (e.changedTouches !== undefined) {
       var x = e.changedTouches[0].clientX
       var y = e.changedTouches[0].clientY
@@ -72,9 +66,9 @@ var Swipeable = React.createClass({
       absX: axd,
       absY: ayd
     }
-  },
+  }
 
-  touchStart: function (e) {
+  touchStart(e) {
     if (this.state.swiping) {
       return;
     }
@@ -88,9 +82,9 @@ var Swipeable = React.createClass({
       y: e.touches[0].clientY,
       swiping: false
     })
-  },
+  }
 
-  touchMove: function (e) {
+  touchMove(e) {
     var multiTouch = e.touches !== undefined && e.touches.length > 1
     if (this.state.x == null || this.state.y == null || multiTouch) {
       return
@@ -134,9 +128,9 @@ var Swipeable = React.createClass({
     if (cancelPageSwipe) {
       e.preventDefault()
     }
-  },
+  }
 
-  touchEnd: function (ev) {
+  touchEnd(ev) {
     if (this.state.swiping) {
       var pos = this.calculatePos(ev)
 
@@ -166,10 +160,10 @@ var Swipeable = React.createClass({
       }
     }
 
-    this.setState(this.getInitialState())
-  },
+    this.setState(initialState)
+  }
 
-  wheel: function (ev) {
+  wheel(ev) {
     // For initializing the movement
     if (!this.state.swiping) {
       this.setState({
@@ -191,9 +185,9 @@ var Swipeable = React.createClass({
     if (Math.abs(ev.deltaX) > Math.abs(ev.deltaY)) {
       ev.preventDefault();
     }
-  },
+  }
 
-  render: function () {
+  render() {
     return (
       <div {...this.props}
         onTouchStart={this.touchStart}
@@ -204,6 +198,20 @@ var Swipeable = React.createClass({
       </div>
     )
   }
-})
+};
+
+Swipeable.propTypes = {
+  onSwiped: React.PropTypes.func,
+  onSwipingUp: React.PropTypes.func,
+  onSwipingRight: React.PropTypes.func,
+  onSwipingDown: React.PropTypes.func,
+  onSwipingLeft: React.PropTypes.func,
+  onSwipedUp: React.PropTypes.func,
+  onSwipedRight: React.PropTypes.func,
+  onSwipedDown: React.PropTypes.func,
+  onSwipedLeft: React.PropTypes.func,
+  flickThreshold: React.PropTypes.number,
+  delta: React.PropTypes.number
+};
 
 module.exports = Swipeable
